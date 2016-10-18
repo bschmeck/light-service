@@ -273,4 +273,15 @@ module TestDoubles
       ctx.final_key = ctx.expected_key
     end
   end
+
+  class DoublesExpectedKeyAction
+    extend LightService::Action
+
+    expects :expected_key
+    promises :expected_key
+
+    executed do |ctx|
+      ctx.expected_key *= 2
+    end
+  end
 end
