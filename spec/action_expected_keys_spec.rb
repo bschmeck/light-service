@@ -69,27 +69,43 @@ describe ":expects macro" do
   end
 
   context "when an expected key is not used" do
-    it "raises an LightService::ExpectedKeysNotUsedError" do
-      exception_msg = "Expected keys [:milk] to be used during " \
-                      "TestDoubles::MakesTeaWithoutMilkAction"
+    it "doesn't raise a LightService::ExpectedKeysNotUsedError" do
       expect do
-        TestDoubles::MakesTeaWithoutMilkAction.execute(
+        TestDoubles::MakesTeaMaybeWithMilkAction.execute(
           :tea => "black",
-          :milk => "full cream"
+          :use_milk => false,
+          :milk => nil
         )
-      end.to \
-        raise_error(LightService::ExpectedKeysNotUsedError, exception_msg)
+      end.to_not raise_error
     end
 
-    context "when the unused key is marked as maybe" do
-      it "doesn't raise a LightService::ExpectedKeysNotUsedError" do
+    context "when configured to raise errors" do
+      before do
+        LightService::Configuration.raise_unused_key_error = true
+      end
+
+      it "raises an LightService::ExpectedKeysNotUsedError" do
+        exception_msg = "Expected keys [:milk] to be used during " \
+                        "TestDoubles::MakesTeaWithoutMilkAction"
         expect do
-          TestDoubles::MakesTeaMaybeWithMilkAction.execute(
+          TestDoubles::MakesTeaWithoutMilkAction.execute(
             :tea => "black",
-            :use_milk => false,
-            :milk => nil
+            :milk => "full cream"
           )
-        end.to_not raise_error
+        end.to \
+          raise_error(LightService::ExpectedKeysNotUsedError, exception_msg)
+      end
+
+      context "when the unused key is marked as maybe" do
+        it "doesn't raise a LightService::ExpectedKeysNotUsedError" do
+          expect do
+            TestDoubles::MakesTeaMaybeWithMilkAction.execute(
+              :tea => "black",
+              :use_milk => false,
+              :milk => nil
+            )
+          end.to_not raise_error
+        end
       end
     end
   end

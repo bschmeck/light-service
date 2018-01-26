@@ -60,6 +60,10 @@ module LightService
       def error_message
         "Expected keys [#{formatted_keys}] to be used during #{action}"
       end
+
+      def throw_error?
+        Configuration.raise_unused_key_error? && super
+      end
     end
 
     class ExpectedKeyVerifier < KeyVerifier
