@@ -38,6 +38,12 @@ RSpec.describe "verifying expected keys are used" do
     end
   end
 
+  around(:each) do |example|
+    LightService::Configuration.action_on_unused_key_error = :raise
+    example.run
+    LightService::Configuration.action_on_unused_key_error = :ignore
+  end
+
   it "raises an error when expected keys aren't used" do
     error_message = "Expected keys [:two] to be used during "\
                     "OnlyExpectedKeysAction"

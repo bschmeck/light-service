@@ -80,11 +80,13 @@ describe ":expects macro" do
     end
 
     context "when configured to raise errors" do
-      before do
-        LightService::Configuration.raise_unused_key_error = true
+      around(:each) do |example|
+        LightService::Configuration.action_on_unused_key_error = :raise
+        example.run
+        LightService::Configuration.action_on_unused_key_error = :ignore
       end
 
-      it "raises an LightService::ExpectedKeysNotUsedError" do
+      it "raises a LightService::ExpectedKeysNotUsedError" do
         exception_msg = "Expected keys [:milk] to be used during " \
                         "TestDoubles::MakesTeaWithoutMilkAction"
         expect do
@@ -105,6 +107,37 @@ describe ":expects macro" do
               :milk => nil
             )
           end.to_not raise_error
+        end
+      end
+    end
+
+    context "when configured to issue warnings" do
+      around(:each) do |example|
+        LightService::Configuration.action_on_unused_key_error = :warn
+        example.run
+        LightService::Configuration.action_on_unused_key_error = :ignore
+      end
+
+      it "issues a deprecation warning" do
+        warning_msg = "Expected keys [:milk] to be used during " \
+                      "TestDoubles::MakesTeaWithoutMilkAction.  " \
+                      "This will raise an exception in future "\
+                      "versions of LightService."
+        expect(ActiveSupport::Deprecation).to receive(:warn).with(warning_msg)
+        TestDoubles::MakesTeaWithoutMilkAction.execute(
+          :tea => "black",
+          :milk => "full cream"
+        )
+      end
+
+      context "when the unused key is marked as maybe" do
+        it "doesn't issue a warning" do
+          expect(ActiveSupport::Deprecation).to_not receive(:warn)
+          TestDoubles::MakesTeaMaybeWithMilkAction.execute(
+            :tea => "black",
+            :use_milk => false,
+            :milk => nil
+          )
         end
       end
     end

@@ -1,7 +1,7 @@
 module LightService
   class Configuration
     class << self
-      attr_accessor :capture_errors, :raise_unused_key_error
+      attr_accessor :capture_errors
       attr_writer :logger, :localization_adapter
 
       def logger
@@ -13,7 +13,23 @@ module LightService
       end
 
       def raise_unused_key_error?
-        !@raise_unused_key_error.nil? && @raise_unused_key_error != false
+        @action_on_unused_key_error == :raise
+      end
+
+      def warn_on_unused_key_error?
+        @action_on_unused_key_error == :warn
+      end
+
+      def ignore_unused_key_error?
+        @action_on_unused_key_error.nil? ||
+          @action_on_unused_key_error == :ignore
+      end
+
+      def action_on_unused_key_error=(value)
+        unless %i[ignore raise warn].include? value
+          raise ArgumentError, "Unsupported action #{value}"
+        end
+        @action_on_unused_key_error = value
       end
 
       private

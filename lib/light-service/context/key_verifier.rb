@@ -20,16 +20,34 @@ module LightService
         "#{type_name} #{formatted_keys} to be in the context during #{action}"
       end
 
+      def warning_message
+        error_message
+      end
+
       def throw_error?
         offending_keys.any?
       end
 
-      def verify
-        return context if context.failure?
-        return context unless throw_error?
+      def issue_warning?
+        false
+      end
 
+      def throw_error
         Configuration.logger.error error_message
         raise error_to_throw, error_message
+      end
+
+      def issue_warning
+        ActiveSupport::Deprecation.warn(warning_message)
+      end
+
+      def verify
+        return context if context.failure?
+
+        throw_error if throw_error?
+        issue_warning if issue_warning?
+
+        context
       end
 
       def self.verify_keys(context, action, &block)
@@ -61,8 +79,17 @@ module LightService
         "Expected keys [#{formatted_keys}] to be used during #{action}"
       end
 
+      def warning_message
+        "Expected keys [#{formatted_keys}] to be used during #{action}.  "\
+          "This will raise an exception in future versions of LightService."
+      end
+
       def throw_error?
         Configuration.raise_unused_key_error? && super
+      end
+
+      def issue_warning?
+        Configuration.warn_on_unused_key_error? && offending_keys.any?
       end
     end
 
